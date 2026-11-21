@@ -6,6 +6,7 @@
 #define MUFFLE_CLI_HPP
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
@@ -13,7 +14,7 @@
 namespace muffle {
 
 /** @brief Requested action after argument parsing. */
-enum class Action {
+enum class Action : std::uint8_t {
   run,     /**< Execute the provided command. */
   help,    /**< Display command-line usage. */
   version, /**< Display the current version. */
