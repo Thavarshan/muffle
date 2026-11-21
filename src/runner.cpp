@@ -58,7 +58,7 @@ class SignalGuard {
   SignalGuard() {
     struct sigaction action {};
     action.sa_handler = forward_signal;
-    ::sigemptyset(&action.sa_mask);
+    sigemptyset(&action.sa_mask);
     action.sa_flags = 0;
     installed_int_ = ::sigaction(SIGINT, &action, &old_int_) == 0;
     installed_term_ = ::sigaction(SIGTERM, &action, &old_term_) == 0;
