@@ -9,7 +9,7 @@ license=('MIT')
 depends=('glibc' 'gcc-libs')
 makedepends=('cmake' 'python')
 source=("$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('14da66c1f20f90dd5d4e3e5c02c15dbfe5f2bcdecb5202c01b793c602f969eee')
 
 build() {
     cmake -S "$srcdir/muffle-$pkgver" -B "$srcdir/build" \

@@ -35,13 +35,12 @@ index are separately implemented.
 
 ## AUR
 
-`packaging/aur/PKGBUILD` is a prepared source recipe. Before submission, replace
-the source checksum with the immutable release hash, set a verified maintainer
-contact as required by AUR, and generate
-`.SRCINFO` using `makepkg --printsrcinfo`, run `namcap`, and build/test in a
-clean Arch environment. The AUR only supports x86_64 packages. Publish only
-with an authorized AUR account and SSH key; external account access and AUR
-acceptance cannot be inferred from this checkout.
+`packaging/aur/PKGBUILD` is a prepared x86_64 source recipe with the v0.1.2
+archive checksum. Before submission, add a verified maintainer contact as
+required by AUR, generate `.SRCINFO` using `makepkg --printsrcinfo`, run
+`namcap`, and build/test in a clean Arch environment. Publish only with an
+authorized AUR account and SSH key; external account access and AUR acceptance
+cannot be inferred from this checkout.
 
 ## Nix
 
@@ -53,11 +52,10 @@ contribution and review process and is separate from this flake.
 
 ## conda-forge
 
-`packaging/conda-forge/meta.yaml` is a draft recipe. Set its source hash from
-the verified tagged archive and validate it with the current conda-forge
-recipe tooling. Submit through staged-recipes only when the recipe and
-maintainer metadata are complete. A submitted recipe is not installable until
-it is reviewed, merged, built, and indexed.
+`packaging/conda-forge/meta.yaml` is a draft recipe with the v0.1.2 archive
+checksum. Validate it with current conda-forge recipe tooling and complete
+maintainer metadata before submitting through staged-recipes. A submitted
+recipe is not installable until reviewed, merged, built, and indexed.
 
 ## Update recovery
 

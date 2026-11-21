@@ -8,7 +8,7 @@ package:
 
 source:
   url: {{ github_url }}/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: REPLACE_WITH_RELEASE_SOURCE_SHA256
+  sha256: 14da66c1f20f90dd5d4e3e5c02c15dbfe5f2bcdecb5202c01b793c602f969eee
 
 build:
   number: 0
