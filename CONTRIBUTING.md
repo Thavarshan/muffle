@@ -2,6 +2,8 @@
 
 Use C++17, 80-column lines and explicit, documented public contracts.
 Avoid adding dependencies unless they offer a measurable advantage.
+Use four spaces for indentation in project code and configuration files.
+Run clang-format before committing C++ changes.
 
 All public headers must use Doxygen documentation for public classes,
 functions, arguments and return values. Documentation warnings fail CI.
