@@ -207,7 +207,8 @@ is published yet.
 - [Issues](https://github.com/Thavarshan/muffle/issues)
 - [CI workflow](.github/workflows/ci.yml)
 
-[ci-badge]: https://img.shields.io/github/actions/workflow/status/Thavarshan/muffle/ci.yml?branch=main
+[ci-badge]: https://img.shields.io/github/actions/workflow/status/Thavarshan/
+  muffle/ci.yml?branch=main
 [ci-workflow]: https://github.com/Thavarshan/muffle/actions/workflows/ci.yml
 [platform-badge]:
   https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey
