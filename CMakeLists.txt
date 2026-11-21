@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(muffle VERSION 0.1.0 LANGUAGES CXX)
+project(muffle VERSION 0.1.1 LANGUAGES CXX)
 
 if(WIN32)
     message(FATAL_ERROR "Muffle v0.1 requires POSIX process APIs")

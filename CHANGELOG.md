@@ -3,9 +3,10 @@
 Notable changes to Muffle are recorded here. The project follows Semantic
 Versioning while pre-1.0; CLI behavior may change between minor releases.
 
-## [0.1.0] - 2026-11-21
+## [0.1.1] - 2026-11-21
 
-- First public release of the native C++17 POSIX command wrapper.
+- First public release of the native C++17 POSIX command wrapper, with
+  packaging workflow fixes discovered during the v0.1.0 dry run.
 - Quiet success summaries, configurable failure tails, verbose streaming,
   persistent logs, and child status propagation.
 - Improved SIGPIPE handling for closed verbose output destinations.

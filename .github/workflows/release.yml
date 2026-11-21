@@ -9,7 +9,7 @@ on:
       version:
         description: Version to validate in a non-publishing dry run
         required: true
-        default: "0.1.0"
+        default: "0.1.1"
         type: string
 
 permissions:
@@ -113,6 +113,7 @@ jobs:
                dnf remove -y muffle'
           fi
           find dist -maxdepth 1 -type f -exec chmod 0644 {} +
+          rm -rf -- dist/_CPack_Packages
       - name: Upload verified packages
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

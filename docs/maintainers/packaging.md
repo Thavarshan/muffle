@@ -36,11 +36,12 @@ index are separately implemented.
 ## AUR
 
 `packaging/aur/PKGBUILD` is a prepared source recipe. Before submission, replace
-the source checksum with the real immutable release archive hash, generate
+the source checksum with the immutable release hash, set a verified maintainer
+contact as required by AUR, and generate
 `.SRCINFO` using `makepkg --printsrcinfo`, run `namcap`, and build/test in a
-clean Arch environment. Publish only with an authorized AUR account and SSH
-key; external account access and AUR acceptance cannot be inferred from this
-checkout.
+clean Arch environment. The AUR only supports x86_64 packages. Publish only
+with an authorized AUR account and SSH key; external account access and AUR
+acceptance cannot be inferred from this checkout.
 
 ## Nix
 

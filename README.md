@@ -183,8 +183,9 @@ can submit pull requests.
 
 Muffle is licensed under the [MIT License](LICENSE). Security support and
 vulnerability reporting guidance are in [SECURITY.md](SECURITY.md). Muffle
-is an early versioned project (`0.1.0`); no release or binary distribution
-is published yet.
+is an early versioned project (`0.1.1`). Check the [release page][releases]
+for current assets and the [installation guide](docs/installation.md) for
+verified package channels.
 
 ## Documentation
 
@@ -220,6 +221,7 @@ is published yet.
 
 [ci]: https://github.com/Thavarshan/muffle/actions/workflows/ci.yml/badge.svg
 [ci-workflow]: https://github.com/Thavarshan/muffle/actions/workflows/ci.yml
+[releases]: https://github.com/Thavarshan/muffle/releases
 [license-badge]: https://img.shields.io/github/license/Thavarshan/muffle
 [cpp]: https://img.shields.io/badge/C%2B%2B-17-blue
 [platform]: https://img.shields.io/badge/platform-macOS%20%26%20Linux-blue
