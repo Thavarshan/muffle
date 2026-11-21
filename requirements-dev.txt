@@ -1,0 +1,2 @@
+# Pinned solely for local/CI validation of GitHub YAML forms.
+PyYAML==6.0.3

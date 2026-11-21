@@ -6,7 +6,7 @@ import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-EXCLUDED = {"build", ".git", ".cache", "__pycache__"}
+EXCLUDED = {"build", ".git", ".cache", ".venv", "__pycache__"}
 EXTENSIONS = {".cpp", ".hpp", ".py", ".sh", ".yml", ".yaml", ".md"}
 NAMES = {"CMakeLists.txt", "Doxyfile", ".clang-tidy", ".clang-format",
          ".editorconfig", ".gitignore", ".gitattributes"}

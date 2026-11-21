@@ -1,0 +1,65 @@
+name: Bug report
+description: Report a reproducible defect in Muffle.
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: "Do not include credentials, private data, or unsanitized logs."
+  - type: input
+    id: version
+    attributes:
+      label: Muffle version
+      description: Output of `muffle --version` or the source commit.
+      placeholder: "muffle 0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Linux
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Compiler and build details
+      description: Compiler/version, CMake version, and build type if relevant.
+      placeholder: "Clang 18, CMake 3.30, Release"
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Include the exact Muffle command and any minimal setup.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: exit-code
+    attributes:
+      label: Exit code
+      description: Include Muffle's observed status.
+      placeholder: "42"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      description: Remove credentials, personal data, and private paths first.
+      render: text

@@ -2,72 +2,212 @@
 
 **Less noise. More signal.**
 
-Muffle is a tiny C++17 CLI that runs noisy development commands while
-suppressing successful output and keeping failures debuggable. No language
-runtime or third-party C++ dependencies are required.
+Muffle runs a command and keeps its successful output out of your terminal.
+When the command fails, it shows the final lines of captured output and keeps
+its log available for diagnosis. The child process's exit status is returned
+so scripts and CI can react to the same result.
+
+Build tools, tests, package managers, and CI jobs can produce hundreds of
+routine lines before reaching the one error that needs attention. Muffle
+keeps those lines in a log and puts a concise success or failure summary in
+the foreground. This can also make AI-assisted development easier to review
+by reducing routine terminal output; Muffle makes no token or productivity
+claims.
+
+Use it for local development, build scripts, test runs, and CI steps. Muffle
+is a native C++17 executable using POSIX process APIs. It has no third-party
+C++ or runtime dependency.
+
+[![CI][ci-badge]][ci-workflow]
+[![MIT
+License](https://img.shields.io/github/license/Thavarshan/muffle)](LICENSE)
+![C++17](https://img.shields.io/badge/C%2B%2B-17-blue)
+![macOS and Linux][platform-badge]
+
+## Features and scope
+
+| Capability | Current behavior |
+| --- | --- |
+| Quiet execution | Suppresses captured child output on success by default. |
+| Failure output | Up to the final 40 lines plus a failure summary. |
+| Tail length | `--tail N` sets the positive number of lines shown on failure. |
+| Persistent log | Retains output; refuses existing paths; requests `0600`. |
+| Temporary log | Removed after success and retained after failure. |
+| Verbose mode | Streams captured bytes while recording them. |
+| Exit status | Returns child codes; signals map to `128 + signal`. |
+| Signals | Forwards SIGINT and SIGTERM to the child group while it is active. |
+| Arguments | Executes directly through `execvp`; no implicit shell parsing. |
+| Output streams | stdout and stderr are combined into one pipe and one log. |
+| Platforms | macOS/Linux intended; Windows and interactive TTYs unsupported. |
+| Runtime | Native executable; no third-party runtime dependency. |
 
 ## Quick start
 
+Requirements are CMake 3.20+, a C++17 compiler, and Python 3 for tests.
+
 ```sh
+git clone https://github.com/Thavarshan/muffle.git
+cd muffle
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build
-./build/muffle -- npm test
-./build/muffle --tail 100 -- cmake --build build
-./build/muffle --verbose -- cargo test
-./build/muffle --log build.log -- make
-```
-
-Use `--` to separate Muffle options from the child command and arguments.
-Commands are executed directly using `execvp`, not via a shell.
-For shell pipelines, explicitly invoke a shell:
-
-```sh
-./build/muffle -- sh -c 'printf "hello\\n" | cat'
-```
-
-On success, Muffle prints an elapsed-time summary and discards its temporary
-log. On failure, it prints the exit status, final 40 lines and private log
-path. `--tail N` changes the line limit; `--verbose` streams the combined
-output as it arrives. `--log PATH` saves a persistent log on success too,
-but will not overwrite an existing file. Logs are initially mode `0600`.
-
-Exit codes are preserved. A child terminated by signal `N` returns `128+N`.
-Missing executables return 127; other execution failures return 126.
-Muffle's own errors return 125, and invalid CLI arguments return 2.
-
-**Platform support:** macOS and Linux (POSIX process APIs). Windows is not
-yet supported. Child stdout and stderr are intentionally combined. Commands
-requiring an interactive TTY or separate output streams are not supported.
-
-## Development
-
-Requirements: CMake 3.20+, a C++17 compiler and Python 3. For complete
-quality gates, install `clang-format`, `clang-tidy` and `doxygen`.
-
-```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build --parallel 2
-ctest --test-dir build --output-on-failure
-bash scripts/check.sh
-bash scripts/setup-hooks.sh
+./build/muffle -- npm test
 ```
 
-`check.sh` enforces an 80-character line limit, whitespace and comment
-hygiene, strict compiler diagnostics, clang-format, clang-tidy, Doxygen
-warnings as errors, and both unit and integration tests. CI also checks
-GCC, Clang, macOS, and address/undefined-behavior sanitizers. Hook
-installation is per clone via `core.hooksPath`.
+For the complete local quality gate, create and activate a Python virtual
+environment, install `requirements-dev.txt`, and run `bash scripts/check.sh`.
 
-## Design
+On macOS, install the command line developer tools and CMake. On Ubuntu or
+Debian, install `build-essential`, `cmake`, and `python3`. See
+[installation](docs/installation.md) for build variants, install steps, and
+platform details.
 
-- `include/muffle/cli.hpp` and `src/cli.cpp`: argument parser.
-- `include/muffle/runner.hpp` and `src/runner.cpp`: process execution.
-- `tests/unit_cli.cpp`: parser unit tests.
-- `tests/integration.py`: actual subprocess behavior tests.
-- `tools/check_source.py`: documentation-adjacent source hygiene rules.
+## What it looks like
 
-The runner uses a private log to avoid unbounded in-memory output buffers.
-A reverse scan displays only the final requested number of lines. Signals
-are forwarded to the child process group. No telemetry or AI APIs are used.
+Illustrative output (elapsed time and temporary path vary):
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contributor expectations.
+```text
+$ muffle -- make test
+muffle: passed (2.31s)
+
+$ muffle --tail 3 -- sh -c 'printf "setup\\nerror\\n"; exit 1'
+muffle: failed (exit 1, 0.01s)
+setup
+error
+Log: /tmp/muffle-a1b2c3
+```
+
+The failure output and log path go to stderr. The success summary goes to
+stdout. `--verbose` streams captured output to stdout while running, then
+prints the success summary there. Since stdout and stderr are merged, verbose
+output does not preserve their original stream distinction or exact
+cross-stream write order.
+
+## Practical examples
+
+Muffle does not require these tools; they are examples of commands it can
+run when installed in your environment.
+
+```sh
+muffle -- npm test
+muffle --tail 80 -- npm run build
+muffle -- composer install
+muffle -- ./vendor/bin/phpunit
+muffle -- cmake --build build --parallel 2
+muffle -- make -j2
+muffle -- cargo test
+muffle -- docker build -t local/app .
+muffle --log build.log -- cmake --build build
+muffle --verbose -- cargo test
+muffle -- sh -c 'generate-files | sort > sorted.txt'
+```
+
+For GitHub Actions, install/build Muffle in a prior step and invoke it as a
+normal command:
+
+```yaml
+- name: Run tests with concise output
+  run: ./build/muffle -- npm test
+```
+
+Muffle passes arguments as given. Shell operators such as pipes, redirects,
+variable expansion, and `&&` only work when you explicitly invoke a shell,
+for example `muffle -- sh -c 'build-command && test-command'`.
+
+See [15+ verified usage patterns](docs/examples.md) for success, failure,
+logging, shell behavior, and development workflows.
+
+## Usage reference
+
+```text
+muffle [--tail N] [--verbose] [--log PATH] -- COMMAND [ARG ...]
+muffle --help | --version
+```
+
+| Option | Meaning |
+| --- | --- |
+| `-h`, `--help` | Print usage and exit successfully. |
+| `--version` | Print the compiled version and exit successfully. |
+| `--tail N` | Show the final positive `N` lines on failure; default is 40. |
+| `--verbose` | Stream captured output while the command runs. |
+| `--log PATH` | Keep a log; destination must not exist. |
+| `--` | End Muffle options; following tokens are the command. |
+
+Use `--` even if the command looks simple. It prevents the parser from
+mistaking child arguments for Muffle options, and preserves shell-looking
+characters literally. Full syntax, parsing errors, and examples are in the
+[CLI reference](docs/cli-reference.md).
+
+## Exit codes and errors
+
+A normal child exit code is returned unchanged. Signal termination returns
+`128 + signal number`. Missing commands return 127; other `execvp` failures
+return 126. Muffle internal failures return 125, and invalid CLI arguments
+return 2. See the [exit-code reference](docs/exit-codes.md).
+
+## Architecture
+
+Muffle parses options, creates a private log and capture pipe, forks, and
+replaces the child process with the requested executable. The parent copies
+combined output to the log, optionally streams it, and prints a bounded tail
+on failure. See [architecture](docs/architecture.md),
+[process execution](docs/process-execution.md), and
+[signal handling](docs/signal-handling.md).
+
+## Contributing and community
+
+Bug reports, focused feature proposals, and documentation fixes are welcome.
+Start with [CONTRIBUTING.md](CONTRIBUTING.md), then use the repository's
+[issue templates](https://github.com/Thavarshan/muffle/issues/new/choose).
+Review expectations and the maintainer workflow are documented there. The
+maintainer works directly on `main` for routine work; external contributors
+can submit pull requests.
+
+- [Code of conduct](CODE_OF_CONDUCT.md)
+- [Security policy](SECURITY.md)
+- [Support](SUPPORT.md)
+- [Governance](GOVERNANCE.md)
+- [Changelog](CHANGELOG.md)
+
+## License and maintenance
+
+Muffle is licensed under the [MIT License](LICENSE). Security support and
+vulnerability reporting guidance are in [SECURITY.md](SECURITY.md). Muffle
+is an early versioned project (`0.1.0`); no release or binary distribution
+is published yet.
+
+## Documentation
+
+- [Documentation index](docs/index.md)
+- [Getting started](docs/getting-started.md)
+- [Installation](docs/installation.md)
+- [CLI reference](docs/cli-reference.md)
+- [Examples](docs/examples.md)
+- [Exit codes](docs/exit-codes.md)
+- [Logging](docs/logging.md)
+- [Security notes](docs/security.md)
+- [Architecture](docs/architecture.md)
+- [Process execution](docs/process-execution.md)
+- [Signal handling](docs/signal-handling.md)
+- [Supported platforms](docs/platforms.md)
+- [Configuration and environment](docs/configuration.md)
+- [Development](docs/development.md)
+- [Testing](docs/testing.md)
+- [Quality standards](docs/quality-standards.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [FAQ](docs/faq.md)
+- [Limitations](docs/limitations.md)
+- [Roadmap](docs/roadmap.md)
+- [Release process](docs/releasing.md)
+- [Maintainer repository settings](docs/maintainers/repository-settings.md)
+- [Maintainer maintenance notes](docs/maintainers/maintenance.md)
+
+## Repository links
+
+- [GitHub Discussions](https://github.com/Thavarshan/muffle/discussions)
+- [Issues](https://github.com/Thavarshan/muffle/issues)
+- [CI workflow](.github/workflows/ci.yml)
+
+[ci-badge]: https://img.shields.io/github/actions/workflow/status/Thavarshan/muffle/ci.yml?branch=main
+[ci-workflow]: https://github.com/Thavarshan/muffle/actions/workflows/ci.yml
+[platform-badge]:
+  https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey

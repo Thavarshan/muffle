@@ -1,0 +1,25 @@
+name: Documentation report
+description: Report unclear, incorrect, or missing documentation.
+title: "docs: "
+labels:
+  - documentation
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Affected page or file
+      description: Link the page or give its repository path.
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: What needs correction?
+      description: Explain what is unclear, incorrect, or missing.
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: Suggested correction
+      description: Provide wording or a source reference if available.

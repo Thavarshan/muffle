@@ -1,0 +1,30 @@
+name: Feature request
+description: Propose a focused improvement to Muffle.
+title: "enhancement: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What are you trying to do, and what is difficult today?
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Proposed behavior
+      description: Describe the behavior you would expect from Muffle.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Include workarounds or other approaches you considered.
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility considerations
+      description: Mention platform, CLI, output, or exit-code impact if known.
