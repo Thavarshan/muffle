@@ -12,7 +12,6 @@ authoritative.
 - Wiki and Projects: disabled
 - Forking: allowed
 - Branch protection: none, allowing maintainer direct pushes to `main`
-- Secret scanning and push protection: enabled
 - Dependabot security updates: enabled
 - Dependabot alerts: enabled
 - Secret scanning and push protection: enabled
