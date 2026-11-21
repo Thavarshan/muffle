@@ -111,11 +111,16 @@ bool write_all(int fd, const char* data, std::size_t length) {
   return true;
 }
 
-bool read_and_capture(int source, int log, bool verbose) {
+struct CaptureFiles {
+  const File& source;
+  const File& log;
+};
+
+bool read_and_capture(CaptureFiles files, bool verbose) {
   char buffer[block_size];
   bool output_usable = true;
   while (true) {
-    const auto count = ::read(source, buffer, sizeof(buffer));
+    const auto count = ::read(files.source.get(), buffer, sizeof(buffer));
     if (count == 0) {
       return true;
     }
@@ -126,7 +131,7 @@ bool read_and_capture(int source, int log, bool verbose) {
       return false;
     }
     const auto size = static_cast<std::size_t>(count);
-    if (!write_all(log, buffer, size)) {
+    if (!write_all(files.log.get(), buffer, size)) {
       return false;
     }
     if (verbose && output_usable) {
@@ -135,7 +140,8 @@ bool read_and_capture(int source, int log, bool verbose) {
   }
 }
 
-bool print_tail(int fd, std::size_t lines) {
+bool print_tail(const File& log, std::size_t lines) {
+  const int fd = log.get();
   const auto size = ::lseek(fd, 0, SEEK_END);
   if (size < 0) {
     return false;
@@ -250,9 +256,11 @@ int run_command(const Options& options) {
   File reader(fds[0]);
   File writer(fds[1]);
 
+  auto owned_command = options.command;
   std::vector<char*> command;
-  for (const auto& argument : options.command) {
-    command.push_back(const_cast<char*>(argument.c_str()));
+  command.reserve(owned_command.size() + 1);
+  for (auto& argument : owned_command) {
+    command.push_back(argument.data());
   }
   command.push_back(nullptr);
 
@@ -286,7 +294,7 @@ int run_command(const Options& options) {
   ::setpgid(child, child);
   writer.close();
   const bool captured =
-      read_and_capture(reader.get(), log.get(), options.verbose);
+      read_and_capture({reader, log}, options.verbose);
   reader.close();
   if (!captured) {
     ::kill(-child, SIGKILL);
@@ -315,7 +323,7 @@ int run_command(const Options& options) {
   } else {
     std::cerr << "muffle: failed (exit " << status << ", " << std::fixed
               << std::setprecision(2) << elapsed.count() << "s)\n";
-    if (!print_tail(log.get(), options.tail_lines)) {
+    if (!print_tail(log, options.tail_lines)) {
       std::cerr << "muffle: unable to display log tail\n";
     }
     std::cerr << "Log: " << log_path << '\n';
