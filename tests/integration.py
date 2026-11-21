@@ -232,6 +232,36 @@ class CliIntegrationTests(unittest.TestCase):
                 process.kill()
                 process.communicate(timeout=5)
 
+    def test_signal_escalates_after_child_closes_output(self):
+        """Escalate if a child closes output before ignoring termination."""
+        marker = self.directory / "ready-closed"
+        code = (
+            "import os,signal,time;os.close(1);os.close(2);"
+            "signal.signal(signal.SIGTERM,signal.SIG_IGN);"
+            f"open({str(marker)!r},'w').close();time.sleep(30)"
+        )
+        process = subprocess.Popen(
+            [self.binary, "--", sys.executable, "-c", code],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=self.environment,
+        )
+        try:
+            deadline = time.monotonic() + 5
+            while not marker.exists() and time.monotonic() < deadline:
+                time.sleep(0.01)
+            self.assertTrue(
+                marker.exists(), "closed-stream child did not start"
+            )
+            process.send_signal(signal.SIGTERM)
+            _, stderr = process.communicate(timeout=5)
+            self.assertEqual(process.returncode, 143)
+            self.assertIn(b"exit 143", stderr)
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.communicate(timeout=5)
+
     def test_many_lines_tail_is_bounded(self):
         """Do not display thousands of irrelevant lines on failure."""
         code = (

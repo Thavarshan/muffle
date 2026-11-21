@@ -228,13 +228,23 @@ bool print_tail(const File& log, std::size_t lines) {
     return true;
 }
 
+bool stop_child(pid_t child, int signal, int& status);
+
 bool wait_child(pid_t child, int& status) {
-    while (::waitpid(child, &status, 0) < 0) {
-        if (errno != EINTR) {
-            return false;
+    while (true) {
+        const auto waited = ::waitpid(child, &status, 0);
+        if (waited == child) {
+            return true;
         }
+        if (waited < 0 && errno == EINTR) {
+            const int signal = received_signal;
+            if (signal != 0) {
+                return stop_child(child, signal, status);
+            }
+            continue;
+        }
+        return false;
     }
-    return true;
 }
 
 } // namespace
@@ -270,7 +280,12 @@ bool stop_child(pid_t child, int signal, int& status) {
     }
     ::kill(-child, SIGKILL);
     ::kill(child, SIGKILL);
-    return false;
+    while (::waitpid(child, &status, 0) < 0) {
+        if (errno != EINTR) {
+            return false;
+        }
+    }
+    return true;
 }
 
 } // namespace
@@ -382,9 +397,9 @@ int run_command(const Options& options) {
         return internal_error;
     }
 
-    const int status = interrupted_by != 0
-                           ? 128 + interrupted_by
-                           : translate_wait_status(child_status);
+    const int final_signal = received_signal;
+    const int status = final_signal != 0 ? 128 + final_signal
+                                         : translate_wait_status(child_status);
     const auto elapsed = std::chrono::duration<double>(
         std::chrono::steady_clock::now() - started);
     if (status == 0) {

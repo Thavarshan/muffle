@@ -24,7 +24,7 @@ REQUIRED = {
     "docs/testing.md",
     "docs/limitations.md",
     "docs/roadmap.md",
-    "docs/release-notes/v0.1.1.md",
+    "docs/release-notes/v0.1.2.md",
     "docs/maintainers/packaging.md",
 }
 LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")

@@ -3,6 +3,12 @@
 Notable changes to Muffle are recorded here. The project follows Semantic
 Versioning while pre-1.0; CLI behavior may change between minor releases.
 
+## [0.1.2] - 2026-11-21
+
+- Fix signal escalation when a child closes its output streams before
+  ignoring SIGINT or SIGTERM.
+- Add an integration test for interruption while waiting after pipe EOF.
+
 ## [0.1.1] - 2026-11-21
 
 - First public release of the native C++17 POSIX command wrapper, with
