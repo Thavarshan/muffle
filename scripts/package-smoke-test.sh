@@ -27,9 +27,8 @@ case "$after" in
 esac
 log_path="$(printf '%s\n' "$after" | sed -n 's/^Log: //p')"
 test -f "$log_path"
-mode="$(python3 -c '
-import os
-import sys
-print(oct(os.stat(sys.argv[1]).st_mode & 0o777)[2:])
-' "$log_path")"
+case "$(uname -s)" in
+    Darwin) mode="$(stat -f '%Lp' "$log_path")" ;;
+    *) mode="$(stat -c '%a' "$log_path")" ;;
+esac
 test "$mode" = "600"
