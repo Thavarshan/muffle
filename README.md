@@ -20,6 +20,7 @@ C++ or runtime dependency.
 
 [![CI][ci]][ci-workflow]
 [![MIT License][license-badge]](LICENSE)
+[![Latest release][release-badge]](releases)
 ![C++17][cpp]
 ![macOS and Linux][platform]
 
@@ -42,7 +43,16 @@ C++ or runtime dependency.
 
 ## Quick start
 
-Requirements are CMake 3.20+, a C++17 compiler, and Python 3 for tests.
+Install the verified Homebrew formula on macOS or Linux:
+
+```sh
+brew install Thavarshan/muffle/muffle
+muffle --version
+muffle -- npm test
+```
+
+Homebrew 7 may ask you to review and trust the third-party formula. For a
+source build, use CMake 3.20+, a C++17 compiler, and Python 3 for tests:
 
 ```sh
 git clone https://github.com/Thavarshan/muffle.git
@@ -222,6 +232,7 @@ verified package channels.
 [ci]: https://github.com/Thavarshan/muffle/actions/workflows/ci.yml/badge.svg
 [ci-workflow]: https://github.com/Thavarshan/muffle/actions/workflows/ci.yml
 [releases]: https://github.com/Thavarshan/muffle/releases
+[release-badge]: https://img.shields.io/github/v/release/Thavarshan/muffle
 [license-badge]: https://img.shields.io/github/license/Thavarshan/muffle
 [cpp]: https://img.shields.io/badge/C%2B%2B-17-blue
 [platform]: https://img.shields.io/badge/platform-macOS%20%26%20Linux-blue

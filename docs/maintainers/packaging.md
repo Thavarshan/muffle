@@ -17,8 +17,8 @@ The formula test checks version output, failure output, and exit status. Local
 maintenance commands are:
 
 ```sh
-brew audit --strict --formula Formula/muffle.rb
-brew style Formula/muffle.rb
+brew audit --strict --formula Thavarshan/muffle/muffle
+brew style Thavarshan/muffle/muffle
 brew install --build-from-source Thavarshan/muffle/muffle
 brew test Thavarshan/muffle/muffle
 brew uninstall muffle

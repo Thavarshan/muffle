@@ -46,31 +46,34 @@ uninstall. The archive does not install a package-manager database entry.
 
 ## Debian and Ubuntu
 
-When `.deb` assets are present in a verified release, download the one matching
-your architecture and install it with:
+For v0.1.1, download the package matching your architecture from the
+[release assets](https://github.com/Thavarshan/muffle/releases/tag/v0.1.1)
+and install it with:
 
 ```sh
-sudo apt install ./muffle_VERSION_ARCH.deb
+sudo apt install ./muffle-0.1.1-Linux-x86_64.deb
 muffle --version
 sudo apt remove muffle
 ```
 
-Replace the filename placeholders with the exact asset name. These files are
-standalone release packages; they are not an APT repository, so `apt install
-muffle` without a local package is not provided by this project.
+For arm64, use `muffle-0.1.1-Linux-aarch64.deb`. These files are standalone
+release packages, not an APT repository; `apt install muffle` without a local
+package is not provided by this project.
 
 ## Fedora and RHEL family
 
-When `.rpm` assets are present in a verified release, download the matching
-package and use:
+For v0.1.1, download the package matching your architecture from the
+[release assets](https://github.com/Thavarshan/muffle/releases/tag/v0.1.1)
+and use:
 
 ```sh
-sudo dnf install ./muffle-VERSION-RELEASE.ARCH.rpm
+sudo dnf install ./muffle-0.1.1-Linux-x86_64.rpm
 muffle --version
 sudo dnf remove muffle
 ```
 
-These downloads are not an enabled DNF repository. Fedora/RHEL runtime
+For arm64, use `muffle-0.1.1-Linux-aarch64.rpm`. These downloads are not an
+enabled DNF repository. Fedora/RHEL runtime
 compatibility depends on the runtime libraries of the build environment; see
 [platform notes](platforms.md).
 
@@ -129,19 +132,13 @@ Add `$HOME/.local/bin` to PATH to run `muffle` without its full path. CMake
 does not generate an uninstall target; remove the installed files listed in
 `build/install_manifest.txt` manually.
 
-## Nix
+## Other package definitions
 
-A source flake is maintained in `flake.nix`. Use it after installing Nix with
-flakes enabled:
-
-```sh
-nix build github:Thavarshan/muffle
-./result/bin/muffle --version
-```
-
-This uses the current default branch. For a pinned release, append the
-verified release tag to the GitHub reference. The flake has not yet been
-published in the official nixpkgs collection.
+A Nix flake, AUR PKGBUILD, and conda-forge recipe are present as candidate
+packaging definitions. They have not completed their platform-specific build,
+installation, or registry review requirements, so this guide does not present
+them as supported installation channels. See
+[package maintenance](maintainers/packaging.md) for the current status.
 
 ## Updating a source checkout
 
@@ -155,8 +152,9 @@ ctest --test-dir build --output-on-failure
 ## Not currently published
 
 The project does not currently publish an APT or DNF repository, AUR package,
-conda-forge package, or Snap. Do not use `apt install muffle`, `dnf install
-muffle`, `yay -S muffle`, or `conda install muffle` as project installation
+Nix package through nixpkgs, conda-forge package, or Snap. Do not use
+`apt install muffle`, `dnf install muffle`, `yay -S muffle`, or
+`conda install muffle` as project installation
 commands. See [release maintenance](releasing.md) for submission status and
 requirements.
 
