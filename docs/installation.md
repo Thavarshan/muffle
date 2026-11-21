@@ -46,33 +46,33 @@ uninstall. The archive does not install a package-manager database entry.
 
 ## Debian and Ubuntu
 
-For v0.1.1, download the package matching your architecture from the
-[release assets](https://github.com/Thavarshan/muffle/releases/tag/v0.1.1)
+For v0.1.2, download the package matching your architecture from the
+[release assets](https://github.com/Thavarshan/muffle/releases/tag/v0.1.2)
 and install it with:
 
 ```sh
-sudo apt install ./muffle-0.1.1-Linux-x86_64.deb
+sudo apt install ./muffle-0.1.2-Linux-x86_64.deb
 muffle --version
 sudo apt remove muffle
 ```
 
-For arm64, use `muffle-0.1.1-Linux-aarch64.deb`. These files are standalone
+For arm64, use `muffle-0.1.2-Linux-aarch64.deb`. These files are standalone
 release packages, not an APT repository; `apt install muffle` without a local
 package is not provided by this project.
 
 ## Fedora and RHEL family
 
-For v0.1.1, download the package matching your architecture from the
-[release assets](https://github.com/Thavarshan/muffle/releases/tag/v0.1.1)
+For v0.1.2, download the package matching your architecture from the
+[release assets](https://github.com/Thavarshan/muffle/releases/tag/v0.1.2)
 and use:
 
 ```sh
-sudo dnf install ./muffle-0.1.1-Linux-x86_64.rpm
+sudo dnf install ./muffle-0.1.2-Linux-x86_64.rpm
 muffle --version
 sudo dnf remove muffle
 ```
 
-For arm64, use `muffle-0.1.1-Linux-aarch64.rpm`. These downloads are not an
+For arm64, use `muffle-0.1.2-Linux-aarch64.rpm`. These downloads are not an
 enabled DNF repository. Fedora/RHEL runtime
 compatibility depends on the runtime libraries of the build environment; see
 [platform notes](platforms.md).
