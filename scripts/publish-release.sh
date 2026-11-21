@@ -26,7 +26,8 @@ else
 fi
 
 verification="$(mktemp -d)"
-trap 'rm -rf -- "$verification"' EXIT
+integrity="$(mktemp -d)"
+trap 'rm -rf -- "$verification" "$integrity"' EXIT
 while IFS= read -r asset; do
     name="$(basename "$asset")"
     if gh release download "$tag" --pattern "$name" \
@@ -44,9 +45,9 @@ while IFS= read -r asset; do
     fi
 done < <(find "$dist" -maxdepth 1 -type f -print | sort)
 
-gh release download "$tag" --pattern 'SHA256SUMS' --dir "$verification"
+gh release download "$tag" --dir "$integrity"
 (
-    cd "$verification"
+    cd "$integrity"
     sha256sum -c SHA256SUMS
 )
 is_draft="$(gh release view "$tag" --json isDraft --jq .isDraft)"
