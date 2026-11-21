@@ -13,8 +13,10 @@ authoritative.
 - Forking: allowed
 - Branch protection: none, allowing maintainer direct pushes to `main`
 - Secret scanning and push protection: enabled
-- Dependabot security updates: enabled where GitHub supports them
-- Private vulnerability reporting: enabled where GitHub supports it
+- Dependabot security updates: enabled
+- Dependabot alerts: enabled
+- Secret scanning and push protection: enabled
+- Private vulnerability reporting: enabled
 
 The repository does not require PRs for maintainer changes. External
 contributors can submit PRs. CI runs on pushes, pull requests, and manual
