@@ -1,0 +1,16 @@
+Checks: >
+  -*,
+  clang-analyzer-*,
+  bugprone-*,
+  cert-err34-c,
+  cppcoreguidelines-pro-type-const-cast,
+  cppcoreguidelines-pro-type-reinterpret-cast,
+  performance-*,
+  portability-*,
+  readability-braces-around-statements,
+  readability-redundant-*,
+  modernize-use-nullptr,
+  modernize-use-override
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*include/muffle/.*'
+FormatStyle: file
