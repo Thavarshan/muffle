@@ -46,6 +46,8 @@ jobs:
         run: cmake --build build --parallel 2
       - name: Unit and integration tests
         run: ctest --test-dir build --output-on-failure
+      - name: Run terminal demonstration
+        run: bash scripts/demo.sh "$PWD/build/muffle"
 
   sanitizers:
     runs-on: ubuntu-latest

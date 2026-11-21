@@ -1,5 +1,9 @@
 # Examples
 
+For a dependency-free demonstration after building Muffle, run
+`bash scripts/demo.sh`. It uses two simulated commands and checks that
+the failing command returns exit status 42.
+
 All examples below require the named command to be installed separately.
 Muffle executes the first token directly and passes remaining arguments
 literally.

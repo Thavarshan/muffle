@@ -60,6 +60,18 @@ Debian, install `build-essential`, `cmake`, and `python3`. See
 [installation](docs/installation.md) for build variants, install steps, and
 platform details.
 
+## Try the demo
+
+After building, run a self-contained demonstration. It needs only a POSIX
+shell and Muffle: no npm, Docker, or Cargo installation.
+
+```sh
+bash scripts/demo.sh
+```
+
+It shows quiet success and a simulated failure with a two-line tail,
+verifies that exit code 42 is preserved, then cleans up temporary logs.
+
 ## What it looks like
 
 Illustrative output (elapsed time and temporary path vary):
