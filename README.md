@@ -18,11 +18,10 @@ Use it for local development, build scripts, test runs, and CI steps. Muffle
 is a native C++17 executable using POSIX process APIs. It has no third-party
 C++ or runtime dependency.
 
-[![CI][ci-badge]][ci-workflow]
-[![MIT
-License](https://img.shields.io/github/license/Thavarshan/muffle)](LICENSE)
-![C++17](https://img.shields.io/badge/C%2B%2B-17-blue)
-![macOS and Linux][platform-badge]
+[![CI][ci]][ci-workflow]
+[![MIT License][license-badge]](LICENSE)
+![C++17][cpp]
+![macOS and Linux][platform]
 
 ## Features and scope
 
@@ -207,8 +206,8 @@ is published yet.
 - [Issues](https://github.com/Thavarshan/muffle/issues)
 - [CI workflow](.github/workflows/ci.yml)
 
-[ci-badge]: https://img.shields.io/github/actions/workflow/status/Thavarshan/
-  muffle/ci.yml?branch=main
+[ci]: https://github.com/Thavarshan/muffle/actions/workflows/ci.yml/badge.svg
 [ci-workflow]: https://github.com/Thavarshan/muffle/actions/workflows/ci.yml
-[platform-badge]:
-  https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey
+[license-badge]: https://img.shields.io/github/license/Thavarshan/muffle
+[cpp]: https://img.shields.io/badge/C%2B%2B-17-blue
+[platform]: https://img.shields.io/badge/platform-macOS%20%26%20Linux-blue
