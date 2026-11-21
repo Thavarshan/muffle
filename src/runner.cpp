@@ -293,8 +293,7 @@ int run_command(const Options& options) {
   child_group = child;
   ::setpgid(child, child);
   writer.close();
-  const bool captured =
-      read_and_capture({reader, log}, options.verbose);
+  const bool captured = read_and_capture({reader, log}, options.verbose);
   reader.close();
   if (!captured) {
     ::kill(-child, SIGKILL);
