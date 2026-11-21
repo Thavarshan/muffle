@@ -1,0 +1,27 @@
+# Maintained by the Muffle project; tested by the release validation workflow.
+pkgname=muffle
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Suppress successful command output and show failure details'
+arch=('x86_64' 'aarch64')
+url='https://github.com/Thavarshan/muffle'
+license=('MIT')
+depends=('glibc' 'gcc-libs')
+makedepends=('cmake')
+source=("$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cmake -S "$srcdir/muffle-$pkgver" -B "$srcdir/build" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr
+    cmake --build "$srcdir/build" --parallel 2
+}
+
+check() {
+    ctest --test-dir "$srcdir/build" --output-on-failure
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install "$srcdir/build"
+}

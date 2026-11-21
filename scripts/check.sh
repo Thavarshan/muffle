@@ -16,7 +16,7 @@ fi
 python3 tools/check_source.py
 python3 tools/check_docs.py
 python3 tools/check_github_config.py
-python3 -m py_compile tests/integration.py tools/check_source.py
+python3 -m py_compile tests/integration.py tools/*.py
 bash -n scripts/*.sh .githooks/pre-commit
 clang-format --dry-run --Werror src/*.cpp include/muffle/*.hpp \
     tests/*.cpp

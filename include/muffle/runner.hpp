@@ -16,6 +16,13 @@ namespace muffle {
  */
 int run_command(const Options& options);
 
+/**
+ * @brief Translate a wait status into the public child status convention.
+ * @param status Status value returned by waitpid.
+ * @return Child exit code, 128 plus terminating signal, or 125 internally.
+ */
+int translate_wait_status(int status);
+
 } // namespace muffle
 
 #endif // MUFFLE_RUNNER_HPP

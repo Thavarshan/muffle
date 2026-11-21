@@ -6,6 +6,12 @@ and forwards those signals to the group using `kill(-pgid, signal)`, falling
 back to the child PID if the group signal fails. The child attempts to create
 its own process group.
 
+If the parent receives SIGINT or SIGTERM while capturing output, it stops
+capturing, forwards the signal, waits up to 500 milliseconds for the direct
+child, then sends SIGKILL to the child group and PID if needed. After a direct
+child exits during this cleanup, it also attempts to kill remaining members
+of that process group.
+
 When the child exits due to a signal, Muffle returns `128 + signal number`.
 For example, SIGTERM normally maps to 143. The integration suite exercises
 SIGTERM forwarding to a directly launched child.

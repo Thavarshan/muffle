@@ -9,6 +9,7 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <poll.h>
 #include <string>
 #include <vector>
 
@@ -24,6 +25,7 @@ namespace {
 constexpr int internal_error = 125;
 constexpr std::size_t block_size = 8192;
 volatile std::sig_atomic_t child_group = 0;
+volatile std::sig_atomic_t received_signal = 0;
 
 class File {
   public:
@@ -50,6 +52,7 @@ class File {
 };
 
 void forward_signal(int signal) {
+    received_signal = signal;
     const auto group = child_group;
     if (group > 0) {
         if (::kill(-group, signal) != 0) {
@@ -82,6 +85,7 @@ class SignalGuard {
             ::sigaction(SIGPIPE, &old_pipe_, nullptr);
         }
         child_group = 0;
+        received_signal = 0;
     }
 
     SignalGuard(const SignalGuard&) = delete;
@@ -111,6 +115,22 @@ bool write_all(int fd, const char* data, std::size_t length) {
     return true;
 }
 
+bool read_at(int fd, char* data, std::size_t length, off_t offset) {
+    std::size_t received = 0;
+    while (received < length) {
+        const auto count = ::pread(fd, data + received, length - received,
+                                   offset + static_cast<off_t>(received));
+        if (count < 0 && errno == EINTR) {
+            continue;
+        }
+        if (count <= 0) {
+            return false;
+        }
+        received += static_cast<std::size_t>(count);
+    }
+    return true;
+}
+
 struct CaptureFiles {
     const File& source;
     const File& log;
@@ -120,6 +140,22 @@ bool read_and_capture(CaptureFiles files, bool verbose) {
     char buffer[block_size];
     bool output_usable = true;
     while (true) {
+        if (received_signal != 0) {
+            return true;
+        }
+        struct pollfd descriptor{};
+        descriptor.fd = files.source.get();
+        descriptor.events = POLLIN | POLLHUP;
+        const int ready = ::poll(&descriptor, 1, 100);
+        if (ready < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            return false;
+        }
+        if (ready == 0) {
+            continue;
+        }
         const auto count = ::read(files.source.get(), buffer, sizeof(buffer));
         if (count == 0) {
             return true;
@@ -155,8 +191,7 @@ bool print_tail(const File& log, std::size_t lines) {
         const auto chunk =
             std::min(block_size, static_cast<std::size_t>(position));
         position -= static_cast<off_t>(chunk);
-        const auto got = ::pread(fd, buffer, chunk, position);
-        if (got != static_cast<ssize_t>(chunk)) {
+        if (!read_at(fd, buffer, chunk, position)) {
             return false;
         }
         for (std::size_t index = chunk; index > 0; --index) {
@@ -179,17 +214,15 @@ bool print_tail(const File& log, std::size_t lines) {
         const auto remaining = size - position;
         const auto chunk =
             std::min(block_size, static_cast<std::size_t>(remaining));
-        const auto got = ::pread(fd, buffer, chunk, position);
-        if (got <= 0) {
+        if (!read_at(fd, buffer, chunk, position)) {
             return false;
         }
-        if (!write_all(STDERR_FILENO, buffer, static_cast<std::size_t>(got))) {
+        if (!write_all(STDERR_FILENO, buffer, chunk)) {
             return false;
         }
-        position += got;
+        position += static_cast<off_t>(chunk);
     }
-    if (size > first && ::pread(fd, buffer, 1, size - 1) == 1 &&
-        buffer[0] != '\n') {
+    if (size > first && read_at(fd, buffer, 1, size - 1) && buffer[0] != '\n') {
         std::cerr << '\n';
     }
     return true;
@@ -204,7 +237,9 @@ bool wait_child(pid_t child, int& status) {
     return true;
 }
 
-int exit_status(int status) {
+} // namespace
+
+int translate_wait_status(int status) {
     if (WIFEXITED(status)) {
         return WEXITSTATUS(status);
     }
@@ -212,6 +247,30 @@ int exit_status(int status) {
         return 128 + WTERMSIG(status);
     }
     return internal_error;
+}
+
+namespace {
+
+bool stop_child(pid_t child, int signal, int& status) {
+    if (::kill(-child, signal) != 0) {
+        ::kill(child, signal);
+    }
+    const auto deadline =
+        std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+    while (std::chrono::steady_clock::now() < deadline) {
+        const auto waited = ::waitpid(child, &status, WNOHANG);
+        if (waited == child) {
+            ::kill(-child, SIGKILL);
+            return true;
+        }
+        if (waited < 0 && errno != EINTR) {
+            return false;
+        }
+        ::poll(nullptr, 0, 20);
+    }
+    ::kill(-child, SIGKILL);
+    ::kill(child, SIGKILL);
+    return false;
 }
 
 } // namespace
@@ -296,23 +355,36 @@ int run_command(const Options& options) {
     child_group = child;
     ::setpgid(child, child);
     writer.close();
-    const bool captured = read_and_capture({reader, log}, options.verbose);
+    bool captured = read_and_capture({reader, log}, options.verbose);
+    const int interrupted_by = received_signal;
     reader.close();
-    if (!captured) {
+    int child_status = 0;
+    bool waited = false;
+    if (captured && interrupted_by == 0) {
+        waited = wait_child(child, child_status);
+    } else if (interrupted_by != 0) {
+        waited = stop_child(child, interrupted_by, child_status);
+        if (!waited) {
+            waited = wait_child(child, child_status);
+        }
+    } else {
         ::kill(-child, SIGKILL);
         ::kill(child, SIGKILL);
+        waited = wait_child(child, child_status);
     }
-    int child_status = 0;
-    const bool waited = wait_child(child, child_status);
     child_group = 0;
 
     if (!captured || !waited) {
         std::cerr << "muffle: capture or wait failed\n";
         std::cerr << "Log: " << log_path << '\n';
+        std::cout.flush();
+        std::cerr.flush();
         return internal_error;
     }
 
-    const int status = exit_status(child_status);
+    const int status = interrupted_by != 0
+                           ? 128 + interrupted_by
+                           : translate_wait_status(child_status);
     const auto elapsed = std::chrono::duration<double>(
         std::chrono::steady_clock::now() - started);
     if (status == 0) {
@@ -330,6 +402,8 @@ int run_command(const Options& options) {
         }
         std::cerr << "Log: " << log_path << '\n';
     }
+    std::cout.flush();
+    std::cerr.flush();
     return status;
 }
 

@@ -21,6 +21,12 @@ arguments for the child, or restrict child privileges. Never pass
 untrusted input into a shell program without applying the shell's own safe
 argument handling.
 
+POSIX `execvp` may fall back to `/bin/sh` when the selected executable file
+is rejected with `ENOEXEC` (for example, an executable text file without a
+valid format or interpreter line). This is `execvp` behavior for the
+executable; Muffle does not otherwise parse the argument vector as shell
+syntax.
+
 The parent uses a pipe to receive combined child output and writes it to a
 log using file descriptors. `waitpid` collects the child status. See
 [logging](logging.md) for stream ordering limitations and

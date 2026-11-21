@@ -70,4 +70,36 @@ if(BUILD_TESTING)
     )
 endif()
 
-install(TARGETS muffle RUNTIME DESTINATION bin)
+include(GNUInstallDirs)
+
+install(TARGETS muffle RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES LICENSE README.md
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/muffle
+)
+install(FILES docs/man/muffle.1
+    DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
+)
+
+set(CPACK_PACKAGE_NAME "muffle")
+set(CPACK_PACKAGE_VENDOR "Jerome Thayananthajothy")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
+    "Suppress successful command output and show failure details")
+set(CPACK_PACKAGE_DESCRIPTION
+    "Muffle captures command output, suppresses it on success, and displays a
+useful tail and log path on failure.")
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/Thavarshan/muffle")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_LICENSE "MIT")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+set(CPACK_PACKAGE_FILE_NAME
+    "muffle-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_GENERATOR "TGZ;DEB;RPM")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Jerome Thayananthajothy")
+set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+set(CPACK_RPM_PACKAGE_LICENSE "MIT")
+set(CPACK_RPM_PACKAGE_GROUP "Applications/System")
+set(CPACK_RPM_PACKAGE_AUTOREQ ON)
+
+include(CPack)

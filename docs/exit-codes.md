@@ -7,16 +7,11 @@ exit status unchanged and uses reserved statuses for failures it detects.
 | --- | ---: | --- |
 | Help or version displayed | 0 | No child is started. |
 | Child exits 0 | 0 | Muffle prints a success summary. |
-| Child exits nonzero | Same status |
-| Muffle prints the configured tail and retains its log. |
-| Child is killed by signal N | 128 + N |
-| POSIX conventional mapping; e.g. SIGTERM (15) becomes 143. |
-| `execvp` reports `ENOENT` | 127 |
-| Includes a missing executable and missing executable interpreter. |
-| Other `execvp` error | 126 |
-| For example, permission denied or another execution error. |
-| Muffle internal failure | 125 |
-| Log creation, pipe/fork, capture, or wait failure. |
+| Child exits nonzero | Same status | Tail shown and log retained. |
+| Child is killed by signal N | 128 + N | SIGTERM (15) becomes 143. |
+| `execvp` reports `ENOENT` | 127 | Missing command or interpreter. |
+| Other `execvp` error | 126 | Includes permission and format errors. |
+| Muffle internal failure | 125 | Log, pipe, fork, capture, or wait failure. |
 | Invalid command-line arguments | 2 | Rejected before launching the child. |
 
 An inaccessible or invalid log path fails before the child starts and returns

@@ -33,6 +33,7 @@ while retaining a concise failure tail and a log.
 - [Roadmap](roadmap.md)
 - [Releasing](releasing.md)
 - [Repository settings](maintainers/repository-settings.md)
+- [Package maintenance](maintainers/packaging.md)
 - [Maintenance notes](maintainers/maintenance.md)
 
 Community policies: [Code of Conduct](../CODE_OF_CONDUCT.md),

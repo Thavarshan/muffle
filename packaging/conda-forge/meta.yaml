@@ -1,0 +1,38 @@
+{% set name = "muffle" %}
+{% set version = "0.1.0" %}
+{% set github_url = "https://github.com/Thavarshan/muffle" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: {{ github_url }}/archive/refs/tags/v{{ version }}.tar.gz
+  sha256: REPLACE_WITH_RELEASE_SOURCE_SHA256
+
+build:
+  number: 0
+  script:
+    - |
+      cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=$PREFIX
+      cmake --build build --parallel 2
+    - cmake --install build
+
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - cmake >=3.20
+  host:
+    - {{ stdlib('c') }}
+
+test:
+  commands:
+    - muffle --version
+    - muffle -- sh -c 'exit 42' || test $? -eq 42
+
+about:
+  home: https://github.com/Thavarshan/muffle
+  license: MIT
+  license_file: LICENSE
+  summary: Suppress successful command output and show failure details

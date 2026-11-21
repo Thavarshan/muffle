@@ -7,3 +7,8 @@ __pycache__/
 *.pyc
 compile_commands.json
 docs/generated/
+dist/
+_CPack_Packages/
+*.deb
+*.rpm
+muffle-*.tar.gz

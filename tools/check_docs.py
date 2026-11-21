@@ -24,6 +24,8 @@ REQUIRED = {
     "docs/testing.md",
     "docs/limitations.md",
     "docs/roadmap.md",
+    "docs/release-notes/v0.1.0.md",
+    "docs/maintainers/packaging.md",
 }
 LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
 HEADING = re.compile(r"^#{1,6}\s+(.+?)\s*#*\s*$")

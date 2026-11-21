@@ -1,0 +1,168 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to validate in a non-publishing dry run
+        required: true
+        default: "0.1.0"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      publish: ${{ steps.version.outputs.publish }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+      - name: Validate version and source
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update
+          sudo apt-get install -y clang-format clang-tidy doxygen
+          python3 -m venv .venv
+          .venv/bin/pip install -r requirements-dev.txt
+          PATH="$PWD/.venv/bin:$PATH" bash scripts/check.sh
+          if [[ "$EVENT_NAME" == push ]]; then
+            version="${REF_NAME#v}"
+            tag="$REF_NAME"
+            publish=true
+          else
+            version="$INPUT_VERSION"
+            tag="v$version"
+            publish=false
+          fi
+          scripts/release.sh validate "$version" "$tag"
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+          printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
+          printf 'publish=%s\n' "$publish" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            asset: darwin-arm64
+          - runner: macos-15-intel
+            asset: darwin-amd64
+          - runner: ubuntu-22.04
+            asset: linux-amd64
+          - runner: ubuntu-22.04-arm
+            asset: linux-arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Build, test, and archive
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+          ASSET: ${{ matrix.asset }}
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr
+          cmake --build build --parallel 2
+          ctest --test-dir build --output-on-failure
+          scripts/package-smoke-test.sh build/muffle "$VERSION"
+          mkdir -p dist
+          stage="$(mktemp -d)"
+          trap 'rm -rf -- "$stage"' EXIT
+          cmake --install build --prefix "$stage"
+          tar -C "$stage" -czf \
+            "dist/muffle-v${VERSION}-${ASSET}.tar.gz" .
+          if [[ "$RUNNER_OS" == Linux ]]; then
+            sudo apt-get update
+            sudo apt-get install -y rpm
+            cpack --config build/CPackConfig.cmake -B dist -G DEB
+            cpack --config build/CPackConfig.cmake -B dist -G RPM
+            deb="$(find dist -maxdepth 1 -name '*.deb' -print -quit)"
+            test -n "$deb"
+            sudo dpkg -i "$deb"
+            scripts/package-smoke-test.sh /usr/bin/muffle "$VERSION"
+            sudo dpkg -r muffle
+            rpm="$(find dist -maxdepth 1 -name '*.rpm' -print -quit)"
+            test -n "$rpm"
+            docker run --rm \
+              -v "$PWD/dist:/packages:ro" \
+              -v "$PWD:/source:ro" \
+              -e VERSION="$VERSION" \
+              fedora:44 bash -lc \
+              'dnf install -y /packages/*.rpm && \
+               /source/scripts/package-smoke-test.sh \
+               /usr/bin/muffle "$VERSION" && \
+               dnf remove -y muffle'
+          fi
+          find dist -maxdepth 1 -type f -exec chmod 0644 {} +
+      - name: Upload verified packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-${{ matrix.asset }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    if: needs.validate.outputs.publish == 'true'
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Download build artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p downloaded dist
+          gh run download "$GITHUB_RUN_ID" --dir downloaded
+          while IFS= read -r -d '' asset; do
+            name="$(basename "$asset")"
+            if [[ -e "dist/$name" ]]; then
+              echo "Duplicate release asset name: $name" >&2
+              exit 1
+            fi
+            mv "$asset" dist/
+          done < <(find downloaded -type f -print0)
+          test -n "$(find dist -type f -print -quit)"
+      - name: Generate checksums
+        run: |
+          cd dist
+          find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 \
+            | sort -z | xargs -0 sha256sum > SHA256SUMS
+          sha256sum -c SHA256SUMS
+      - name: Attest release assets
+        uses: actions/attest-build-provenance@v2.4.0
+        with:
+          subject-path: dist/*
+      - name: Publish draft and verify assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+        run: scripts/publish-release.sh "$RELEASE_TAG" "$RELEASE_VERSION" dist

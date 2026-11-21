@@ -1,9 +1,13 @@
 #include "muffle/cli.hpp"
+#include "muffle/runner.hpp"
 
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#include <csignal>
+#include <sys/wait.h>
 
 namespace {
 
@@ -15,11 +19,12 @@ void require(bool condition, const std::string& message) {
 
 void test_command_tokens() {
     const auto result =
-        muffle::parse_arguments({"--", "printf", "%s", "hello world"});
+        muffle::parse_arguments({"--", "printf", "%s", "hello world", "café"});
     require(result.action == muffle::Action::run, "run action");
-    require(result.options.command.size() == 3, "argument count");
+    require(result.options.command.size() == 4, "argument count");
     require(result.options.command.at(2) == "hello world",
             "arguments stay unmodified");
+    require(result.options.command.at(3) == "café", "unicode is preserved");
 }
 
 void test_options() {
@@ -60,6 +65,14 @@ void test_help_and_version() {
             "usage text");
 }
 
+void test_exit_status_translation() {
+    require(muffle::translate_wait_status(0) == 0, "zero status translation");
+    require(muffle::translate_wait_status(42 << 8) == 42,
+            "child exit status translation");
+    require(muffle::translate_wait_status(SIGTERM) == 128 + SIGTERM,
+            "signal status translation");
+}
+
 } // namespace
 
 int main() {
@@ -68,6 +81,7 @@ int main() {
         test_options();
         test_errors();
         test_help_and_version();
+        test_exit_status_translation();
         std::cout << "CLI unit tests passed\n";
     } catch (const std::exception& error) {
         std::cerr << "CLI unit test failed: " << error.what() << '\n';

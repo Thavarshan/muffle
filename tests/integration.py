@@ -29,6 +29,7 @@ class CliIntegrationTests(unittest.TestCase):
             check=False,
             capture_output=True,
             text=True,
+            errors="replace",
             env=self.environment,
             timeout=15,
         )
@@ -122,6 +123,114 @@ class CliIntegrationTests(unittest.TestCase):
         result = self.child(code)
         self.assertEqual(result.returncode, 6)
         self.assertIn("partial\nLog:", result.stderr)
+
+    def test_empty_output_is_quiet(self):
+        """An empty successful child produces only the summary."""
+        result = self.child("pass")
+        self.assertEqual(result.returncode, 0)
+        self.assertNotIn("\n", result.stdout.rstrip("\n"))
+        self.assertEqual(result.stderr, "")
+
+    def test_binary_output_is_captured(self):
+        """Non-UTF-8 bytes do not crash capture or failure reporting."""
+        code = "import os,sys;os.write(1,b'\\xff\\xfe');sys.exit(7)"
+        result = self.child(code)
+        self.assertEqual(result.returncode, 7)
+        self.assertIn("Log: ", result.stderr)
+
+    def test_large_output_is_fully_logged(self):
+        """Capture output larger than the pipe buffer without truncation."""
+        log = self.directory / "large.log"
+        code = "import os;os.write(1,b'x'*1048576)"
+        result = self.child(code, "--log", str(log))
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(log.stat().st_size, 1048576)
+
+    def test_unwritable_log_directory_fails_before_child(self):
+        """A missing parent directory is an internal log-creation failure."""
+        log = self.directory / "missing" / "capture.log"
+        result = self.child("print('must not run')", "--log", str(log))
+        self.assertEqual(result.returncode, 125)
+        self.assertNotIn("must not run", result.stderr)
+
+    def test_permission_denied_executable_returns_126(self):
+        """An existing non-executable file maps to execution error 126."""
+        command = self.directory / "not-executable"
+        command.write_text("#!/bin/sh\nexit 0\n")
+        command.chmod(0o600)
+        result = self.invoke("--", str(command))
+        self.assertEqual(result.returncode, 126)
+        self.assertIn("exec failed", result.stderr)
+
+    def test_execvp_interpreter_fallback_is_documented(self):
+        """POSIX execvp uses a shell for executable text with no shebang."""
+        command = self.directory / "format-fallback"
+        command.write_text("echo fallback-output\nexit 4\n")
+        command.chmod(0o700)
+        result = self.invoke("--", str(command))
+        self.assertEqual(result.returncode, 4)
+        self.assertIn("fallback-output", result.stderr)
+
+    def test_exact_tail_count_with_trailing_newline(self):
+        """Do not emit an extra empty line for a newline-terminated log."""
+        result = self.child(
+            "import sys;print('one');print('two');print('three');sys.exit(8)",
+            "--tail",
+            "2",
+        )
+        self.assertEqual(result.returncode, 8)
+        self.assertNotIn("one\n", result.stderr)
+        self.assertIn("two\nthree\n", result.stderr)
+
+    def test_verbose_closed_output_does_not_hang(self):
+        """A closed verbose destination does not stop pipe draining."""
+        process = subprocess.Popen(
+            [
+                self.binary,
+                "--verbose",
+                "--",
+                sys.executable,
+                "-c",
+                "import os;os.write(1,b'x'*1048576)",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=self.environment,
+        )
+        self.assertIsNotNone(process.stdout)
+        process.stdout.close()
+        _, stderr = process.communicate(timeout=10)
+        self.assertEqual(process.returncode, 0,
+                         stderr.decode(errors="replace"))
+
+    def test_terminating_signal_escalates_for_ignoring_child(self):
+        """An ignoring child is killed after the forwarding grace interval."""
+        marker = self.directory / "ready-ignore"
+        code = (
+            "import signal,time;"
+            "signal.signal(signal.SIGTERM,signal.SIG_IGN);"
+            f"open({str(marker)!r},'w').close();"
+            "time.sleep(30)"
+        )
+        process = subprocess.Popen(
+            [self.binary, "--", sys.executable, "-c", code],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=self.environment,
+        )
+        try:
+            deadline = time.monotonic() + 5
+            while not marker.exists() and time.monotonic() < deadline:
+                time.sleep(0.01)
+            self.assertTrue(marker.exists(), "ignoring child did not start")
+            process.send_signal(signal.SIGTERM)
+            _, stderr = process.communicate(timeout=5)
+            self.assertEqual(process.returncode, 143)
+            self.assertIn(b"exit 143", stderr)
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.communicate(timeout=5)
 
     def test_many_lines_tail_is_bounded(self):
         """Do not display thousands of irrelevant lines on failure."""

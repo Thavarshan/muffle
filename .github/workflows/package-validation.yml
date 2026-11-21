@@ -1,0 +1,44 @@
+name: Package validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "CMakeLists.txt"
+      - "docs/man/**"
+      - "packaging/**"
+      - "scripts/package-smoke-test.sh"
+      - ".github/workflows/package-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  source-package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            name: macOS arm64
+          - os: macos-15-intel
+            name: macOS x86_64
+          - os: ubuntu-22.04
+            name: Ubuntu x86_64
+          - os: ubuntu-22.04-arm
+            name: Ubuntu arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Build and test install tree
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel 2
+          ctest --test-dir build --output-on-failure
+          install_root="$RUNNER_TEMP/muffle-install"
+          cmake --install build --prefix "$install_root"
+          version="$(sed -n 's/^project(muffle VERSION \([^ ]*\).*/\1/p' \
+            CMakeLists.txt)"
+          scripts/package-smoke-test.sh \
+            "$install_root/bin/muffle" "$version"
+          test -f "$install_root/share/man/man1/muffle.1"

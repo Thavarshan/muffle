@@ -1,0 +1,88 @@
+.TH MUFFLE 1 "November 2026" "Muffle 0.1.0" "User Commands"
+.SH NAME
+muffle \- suppress successful command output and show useful failure details
+.SH SYNOPSIS
+.B muffle
+.RI [ options ] " -- command " [ arguments ... ]
+.br
+.B muffle --help | --version
+.SH DESCRIPTION
+Muffle runs a command directly, captures its standard output and standard
+error into one log, and suppresses captured output when the command succeeds.
+On failure it prints a bounded tail and the log path. It returns the child
+status, mapping signal termination to 128 plus the signal number.
+.PP
+Muffle does not parse a shell command string. Shell syntax requires an
+explicit shell command, for example
+.BR "muffle -- sh -c 'make && make test'" .
+The POSIX execvp API may use /bin/sh for an executable text file rejected
+with ENOEXEC; this is executable-format fallback, not parsing of arguments.
+.SH OPTIONS
+.TP
+.BR -h , " --help"
+Print usage information and exit successfully.
+.TP
+.B --version
+Print the compiled version and exit successfully.
+.TP
+.BI "--tail " N
+Display at most the final N output lines on failure. N must be a positive
+integer. The default is 40.
+.TP
+.B --verbose
+Stream captured output to Muffle's standard output while retaining it in the
+log.
+.TP
+.BI "--log " PATH
+Create a persistent log at PATH. The path must not already exist. Muffle
+requests file mode 0600.
+.TP
+.B --
+End Muffle option parsing. The following arguments form the child command.
+.SH EXIT STATUS
+.TP
+.B 0
+Child succeeded, or help/version was printed.
+.TP
+.B 2
+Invalid command-line arguments.
+.TP
+.B 125
+Muffle internal failure.
+.TP
+.B 126
+The command was found but could not be executed.
+.TP
+.B 127
+The command could not be found.
+.TP
+.B other values
+The normal child exit code, or 128 plus the signal number if signal-killed.
+.SH ENVIRONMENT
+.TP
+.B TMPDIR
+Directory used for temporary logs. Defaults to /tmp when unset.
+The child inherits the invoking environment.
+.SH FILES
+Temporary logs are created as muffle-XXXXXX under TMPDIR (or /tmp). A
+successful temporary log is removed. A failed temporary log is retained.
+Persistent --log files remain after success and failure.
+.SH SIGNALS
+SIGINT and SIGTERM are forwarded to the child process group. If the child
+remains alive after the grace interval, Muffle sends SIGKILL. Descendants that
+leave the process group may not be terminated.
+.SH LIMITATIONS
+Child stdout and stderr are combined. Muffle does not allocate a pseudo-
+terminal, preserve interactive terminal behavior, or support native Windows.
+Logs are not redacted or encrypted.
+.SH EXAMPLES
+.nf
+muffle -- cmake --build build
+muffle --tail 10 -- make test
+muffle --verbose -- cargo test
+muffle --log build.log -- npm test
+muffle -- sh -c 'make && make test'
+.fi
+.SH SEE ALSO
+.BR sh (1),
+.I https://github.com/Thavarshan/muffle

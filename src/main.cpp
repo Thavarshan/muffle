@@ -1,11 +1,17 @@
 #include "muffle/cli.hpp"
 #include "muffle/runner.hpp"
 
+#include <csignal>
 #include <iostream>
 #include <string>
 #include <vector>
 
 int main(int argc, char* argv[]) {
+    struct sigaction pipe_action{};
+    pipe_action.sa_handler = SIG_IGN;
+    sigemptyset(&pipe_action.sa_mask);
+    ::sigaction(SIGPIPE, &pipe_action, nullptr);
+
     std::vector<std::string> arguments;
     for (int index = 1; index < argc; ++index) {
         arguments.emplace_back(argv[index]);
