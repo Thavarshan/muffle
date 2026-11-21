@@ -13,18 +13,18 @@ int main(int argc, char* argv[]) {
 
   const auto parsed = muffle::parse_arguments(arguments);
   switch (parsed.action) {
-    case muffle::Action::help:
-      std::cout << muffle::usage();
-      return 0;
-    case muffle::Action::version:
-      std::cout << "muffle " << MUFFLE_VERSION << '\n';
-      return 0;
-    case muffle::Action::error:
-      std::cerr << "muffle: " << parsed.error_message << '\n';
-      std::cerr << "Use --help for usage.\n";
-      return 2;
-    case muffle::Action::run:
-      return muffle::run_command(parsed.options);
+  case muffle::Action::help:
+    std::cout << muffle::usage();
+    return 0;
+  case muffle::Action::version:
+    std::cout << "muffle " << MUFFLE_VERSION << '\n';
+    return 0;
+  case muffle::Action::error:
+    std::cerr << "muffle: " << parsed.error_message << '\n';
+    std::cerr << "Use --help for usage.\n";
+    return 2;
+  case muffle::Action::run:
+    return muffle::run_command(parsed.options);
   }
   return 2;
 }

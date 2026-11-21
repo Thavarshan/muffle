@@ -14,8 +14,8 @@ void require(bool condition, const std::string& message) {
 }
 
 void test_command_tokens() {
-  const auto result = muffle::parse_arguments(
-      {"--", "printf", "%s", "hello world"});
+  const auto result =
+      muffle::parse_arguments({"--", "printf", "%s", "hello world"});
   require(result.action == muffle::Action::run, "run action");
   require(result.options.command.size() == 3, "argument count");
   require(result.options.command.at(2) == "hello world",
@@ -24,8 +24,7 @@ void test_command_tokens() {
 
 void test_options() {
   const auto result = muffle::parse_arguments(
-      {"--verbose", "--tail", "99", "--log", "report.log",
-       "--", "echo", "ok"});
+      {"--verbose", "--tail", "99", "--log", "report.log", "--", "echo", "ok"});
   require(result.action == muffle::Action::run, "run action");
   require(result.options.verbose, "verbose flag");
   require(result.options.tail_lines == 99, "tail value");
@@ -34,21 +33,23 @@ void test_options() {
 
 void test_errors() {
   const std::vector<std::vector<std::string>> cases = {
-      {}, {"--"}, {"--tail"}, {"--tail", "0", "--", "x"},
+      {},
+      {"--"},
+      {"--tail"},
+      {"--tail", "0", "--", "x"},
       {"--tail", "abc", "--", "x"},
       {"--tail", "184467440737095516161", "--", "x"},
-      {"--unknown"}, {"--log"}};
+      {"--unknown"},
+      {"--log"}};
   for (const auto& arguments : cases) {
     const auto result = muffle::parse_arguments(arguments);
-    require(result.action == muffle::Action::error,
-            "invalid input rejected");
+    require(result.action == muffle::Action::error, "invalid input rejected");
     require(!result.error_message.empty(), "error includes reason");
   }
 }
 
 void test_help_and_version() {
-  require(muffle::parse_arguments({"--help"}).action ==
-              muffle::Action::help,
+  require(muffle::parse_arguments({"--help"}).action == muffle::Action::help,
           "help action");
   require(muffle::parse_arguments({"--version"}).action ==
               muffle::Action::version,
@@ -57,7 +58,7 @@ void test_help_and_version() {
           "usage text");
 }
 
-}  // namespace
+} // namespace
 
 int main() {
   try {

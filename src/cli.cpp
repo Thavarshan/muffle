@@ -26,16 +26,16 @@ bool parse_tail(const std::string& token, std::size_t& value) {
   return parsed.ec == std::errc{} && parsed.ptr == end && value > 0;
 }
 
-}  // namespace
+} // namespace
 
 ParseResult parse_arguments(const std::vector<std::string>& arguments) {
   ParseResult result;
   for (std::size_t index = 0; index < arguments.size(); ++index) {
     const auto& arg = arguments[index];
     if (arg == "--") {
-      result.options.command.assign(
-          arguments.begin() + static_cast<std::ptrdiff_t>(index + 1),
-          arguments.end());
+      result.options.command.assign(arguments.begin() +
+                                        static_cast<std::ptrdiff_t>(index + 1),
+                                    arguments.end());
       if (result.options.command.empty()) {
         return failure("expected a command after '--'");
       }
@@ -87,4 +87,4 @@ std::string usage() {
          "Logs are private; --log PATH must not already exist.\n";
 }
 
-}  // namespace muffle
+} // namespace muffle

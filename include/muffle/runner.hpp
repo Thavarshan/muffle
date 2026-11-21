@@ -16,6 +16,6 @@ namespace muffle {
  */
 int run_command(const Options& options);
 
-}  // namespace muffle
+} // namespace muffle
 
-#endif  // MUFFLE_RUNNER_HPP
+#endif // MUFFLE_RUNNER_HPP

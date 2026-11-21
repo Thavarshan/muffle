@@ -26,13 +26,18 @@ constexpr std::size_t block_size = 8192;
 volatile std::sig_atomic_t child_group = 0;
 
 class File {
- public:
-  explicit File(int fd = -1) : fd_(fd) {}
-  ~File() { close(); }
+public:
+  explicit File(int fd = -1) : fd_(fd) {
+  }
+  ~File() {
+    close();
+  }
   File(const File&) = delete;
   File& operator=(const File&) = delete;
 
-  int get() const { return fd_; }
+  int get() const {
+    return fd_;
+  }
   void close() {
     if (fd_ >= 0) {
       ::close(fd_);
@@ -40,7 +45,7 @@ class File {
     }
   }
 
- private:
+private:
   int fd_;
 };
 
@@ -54,9 +59,9 @@ void forward_signal(int signal) {
 }
 
 class SignalGuard {
- public:
+public:
   SignalGuard() {
-    struct sigaction action {};
+    struct sigaction action{};
     action.sa_handler = forward_signal;
     sigemptyset(&action.sa_mask);
     action.sa_flags = 0;
@@ -82,10 +87,10 @@ class SignalGuard {
   SignalGuard(const SignalGuard&) = delete;
   SignalGuard& operator=(const SignalGuard&) = delete;
 
- private:
-  struct sigaction old_int_ {};
-  struct sigaction old_term_ {};
-  struct sigaction old_pipe_ {};
+private:
+  struct sigaction old_int_{};
+  struct sigaction old_term_{};
+  struct sigaction old_pipe_{};
   bool installed_pipe_{false};
   bool installed_int_{false};
   bool installed_term_{false};
@@ -141,8 +146,7 @@ bool print_tail(int fd, std::size_t lines) {
   bool at_end = true;
   char buffer[block_size];
   while (position > 0) {
-    const auto chunk = std::min(
-        block_size, static_cast<std::size_t>(position));
+    const auto chunk = std::min(block_size, static_cast<std::size_t>(position));
     position -= static_cast<off_t>(chunk);
     const auto got = ::pread(fd, buffer, chunk, position);
     if (got != static_cast<ssize_t>(chunk)) {
@@ -166,14 +170,13 @@ bool print_tail(int fd, std::size_t lines) {
   position = first;
   while (position < size) {
     const auto remaining = size - position;
-    const auto chunk = std::min(
-        block_size, static_cast<std::size_t>(remaining));
+    const auto chunk =
+        std::min(block_size, static_cast<std::size_t>(remaining));
     const auto got = ::pread(fd, buffer, chunk, position);
     if (got <= 0) {
       return false;
     }
-    if (!write_all(STDERR_FILENO, buffer,
-                   static_cast<std::size_t>(got))) {
+    if (!write_all(STDERR_FILENO, buffer, static_cast<std::size_t>(got))) {
       return false;
     }
     position += got;
@@ -204,7 +207,7 @@ int exit_status(int status) {
   return internal_error;
 }
 
-}  // namespace
+} // namespace
 
 int run_command(const Options& options) {
   if (options.command.empty()) {
@@ -217,8 +220,8 @@ int run_command(const Options& options) {
   const bool persistent = options.log_path.has_value();
   if (persistent) {
     log_path = *options.log_path;
-    log_fd = ::open(log_path.c_str(),
-                    O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, 0600);
+    log_fd =
+        ::open(log_path.c_str(), O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, 0600);
   } else {
     const char* const temp = std::getenv("TMPDIR");
     const std::string directory = temp != nullptr ? temp : "/tmp";
@@ -231,8 +234,7 @@ int run_command(const Options& options) {
     }
   }
   if (log_fd < 0) {
-    std::cerr << "muffle: cannot create log: " << std::strerror(errno)
-              << '\n';
+    std::cerr << "muffle: cannot create log: " << std::strerror(errno) << '\n';
     return internal_error;
   }
   File log(log_fd);
@@ -276,16 +278,15 @@ int run_command(const Options& options) {
     log.close();
     ::execvp(command.front(), command.data());
     const int error = errno;
-    ::dprintf(STDERR_FILENO, "muffle: exec failed: %s\n",
-              std::strerror(error));
+    ::dprintf(STDERR_FILENO, "muffle: exec failed: %s\n", std::strerror(error));
     _exit(error == ENOENT ? 127 : 126);
   }
 
   child_group = child;
   ::setpgid(child, child);
   writer.close();
-  const bool captured = read_and_capture(reader.get(), log.get(),
-                                         options.verbose);
+  const bool captured =
+      read_and_capture(reader.get(), log.get(), options.verbose);
   reader.close();
   if (!captured) {
     ::kill(-child, SIGKILL);
@@ -302,19 +303,18 @@ int run_command(const Options& options) {
   }
 
   const int status = exit_status(child_status);
-  const auto elapsed = std::chrono::duration<double>(
-      std::chrono::steady_clock::now() - started);
+  const auto elapsed =
+      std::chrono::duration<double>(std::chrono::steady_clock::now() - started);
   if (status == 0) {
-    std::cout << "muffle: passed (" << std::fixed
-              << std::setprecision(2) << elapsed.count() << "s)\n";
+    std::cout << "muffle: passed (" << std::fixed << std::setprecision(2)
+              << elapsed.count() << "s)\n";
     if (!persistent) {
       log.close();
       ::unlink(log_path.c_str());
     }
   } else {
-    std::cerr << "muffle: failed (exit " << status << ", "
-              << std::fixed << std::setprecision(2)
-              << elapsed.count() << "s)\n";
+    std::cerr << "muffle: failed (exit " << status << ", " << std::fixed
+              << std::setprecision(2) << elapsed.count() << "s)\n";
     if (!print_tail(log.get(), options.tail_lines)) {
       std::cerr << "muffle: unable to display log tail\n";
     }
@@ -323,4 +323,4 @@ int run_command(const Options& options) {
   return status;
 }
 
-}  // namespace muffle
+} // namespace muffle

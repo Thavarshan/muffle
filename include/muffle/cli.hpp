@@ -55,6 +55,6 @@ ParseResult parse_arguments(const std::vector<std::string>& arguments);
  */
 std::string usage();
 
-}  // namespace muffle
+} // namespace muffle
 
-#endif  // MUFFLE_CLI_HPP
+#endif // MUFFLE_CLI_HPP
